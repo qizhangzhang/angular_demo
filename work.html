@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<link rel="stylesheet" href="css/bootstrap.min.css">
+	<style>
+		*{
+			margin: 0;
+			padding: 0;
+		}
+		.container{
+			margin-top:100px;
+			padding:0 50px;
+		}
+		.left{
+			float: left;
+		}
+		select{
+			padding:7px;
+			border-radius: 5px;
+		}
+		.right{
+			float: right;
+		}
+		table{
+			margin-top:80px;
+			table-layout: fixed;
+		}
+		table th,td{
+			text-align: center;
+		}
+		input{
+			padding:5px 14px;
+			border-radius: 5px;
+			border:1px solid #ccc;
+		}
+		tbody input{
+			padding:3px;
+			width:50%;
+		}
+		#post{
+			background-color:#f62;
+			color:#fff;
+		}
+		#hold{
+			margin-left: 10px;
+			display: none;
+		}
+	</style>
+</head>
+<body>
+	<div ng-app="myapp" class="box">
+		<div class="container" ng-controller="firstContrl">
+			<div class="left">
+				<select name="" id="" ng-change="changeType()" ng-model="inputVal2">
+					<option value="id">ID号</option>
+					<option value="bookName">书名</option>
+					<option value="writer">作者</option>
+				</select>
+				<input type="text" ng-model="inputVal" >
+			</div>
+			<div class="right">
+				<input type="text" placeholder="ID号" ng-model='inputId'>
+				<input type="text" placeholder="书名" ng-model='inputBookname'>
+				<input type="text" placeholder="作者" ng-model="inputWriter">
+				<input type="button" value="提交" id="post" ng-click="sendMsg()">
+			</div>
+			<table class="table table-hover">
+				<thead>
+					<tr>
+						<th>ID号</th>
+						<th>书名</th>
+						<th>作者</th>
+						<th>操作</th>
+						<th>删除</th>
+					</tr>
+				</thead>
+				<tbody>
+					<tr ng-repeat="id in arr | filter:typeFun(ty) | orderBy:inputVal2">
+						<td>{{id.id}}</td>
+						<td>
+							<p ng-show="isShow">{{id.bookName}}</p>
+							<input type="text" ng-hide="isShow" ng-model="id.bookName">
+						</td>
+						<td>
+							<p ng-show="isShow">{{id.writer}}</p>
+							<input type="text" ng-hide="isShow" ng-model="id.writer">
+						</td>
+						<td>
+							<a href="javascript:void(0)" ng-click="amend()">{{str}}</a>
+						</td>
+						<td><a href="javascript:void(0)" ng-click="del()">删除</a></td>
+					</tr>
+				</tbody>
+			</table>
+		</div>
+	</div>
+</body>
+<script type="text/javascript" src="angular.js"></script>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript">
+	
+	
+
+	var myapp = angular.module('myapp',[]);
+
+	myapp.controller('firstContrl',['$scope',function($scope){	
+		// 页面加载完成获取json数据中的数据并返回
+		$scope.checkBookname=function(){
+			$.ajax({
+				type:'post',
+				url:'demo1.php',
+				async:false,
+				data:{
+					"type":"checkBookname",
+				},
+				success:function(data){
+					$scope.arr = JSON.parse(data);
+				}
+			});
+		}
+		$scope.checkBookname();	
+
+
+
+		// 将数据保存到json中
+		$scope.sendMsg = function(){
+			if(!this.inputId){
+				alert('请输入ID号');
+			}else if(!this.inputBookname){
+				alert('请输入书名');
+			}else if(!this.inputWriter){
+				alert('请输入作者');
+			}else{
+				var _inputId = this.inputId,
+					_inputBookname = this.inputBookname,
+					_inputWriter = this.inputWriter;
+				$.ajax({
+					type:'post',
+					url:'demo1.php',
+					async:false,
+					data:{
+						"type":"insert",
+						"id":_inputId,
+						"bookName":_inputBookname,
+						"writer":_inputWriter,
+					},
+					success:function(data){
+						console.log("添加成功");
+						console.log(JSON.parse(data));
+						$scope.checkBookname();
+						// $scope.arr = JSON.parse(data);
+					}
+				})
+				this.inputId = '';
+				this.inputBookname = '';
+				this.inputWriter = '';
+			}	
+		}
+		//删除
+		$scope.del = function(){
+			console.log(this.id.bookName);
+			var bookName = this.id.bookName;
+			$.ajax({
+				type:'post',
+				url:'demo1.php',
+				async:false,
+				data:{
+					"type":"detele",
+					"bookName":bookName,
+				},
+				success:function(data){
+					console.log('删除成功');
+					$scope.checkBookname();
+					// $scope.arr = JSON.parse(data);
+				}
+			})
+		}
+		$scope.isShow = true;
+		$scope.str = "修改";
+		//修改
+		$scope.amend = function(){
+			if(this.isShow){
+				this.isShow = false;
+				this.str = "保存";
+			}else{
+				var now_inputId = this.id.id,
+					now_inputBookname = this.id.bookName,
+					now_inputWriter = this.id.writer;
+				console.log(now_inputBookname,now_inputWriter);
+				$.ajax({
+					type:'post',
+					url:'demo1.php',
+					async:false,
+					data:{
+						'type':'amend',
+						'id':now_inputId,
+						'bookName':now_inputBookname,
+						'writer':now_inputWriter,
+					},
+					success:function(data){
+						console.log(data);
+						console.log('修改成功');
+					}
+				})
+				this.isShow = true;
+				this.str = "修改";
+			}
+
+		}
+
+
+		//按照要求排序
+		//初始化
+		$scope.ty = 'id';
+		$scope.inputVal2 = "id";
+		// select选项修改
+		$scope.changeType = function(){
+			this.ty = $scope.inputVal2;
+		}
+		// 输入框输入排序项
+		$scope.typeFun = function(ty){
+			var obj = {};
+			obj[ty] = this.inputVal;
+			// console.log(obj);
+			return obj;	
+		}
+	}]);
+</script>
+</html>

@@ -1,0 +1,2 @@
+使用bootstrap布局，使用angular.js实现一个增删改查的小demo.
+注：需在服务器环境下才能看到
